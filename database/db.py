@@ -95,6 +95,18 @@ def email_exists(email):
         conn.close()
 
 
+def get_user_by_email(email):
+    conn = get_db()
+    try:
+        row = conn.execute(
+            "SELECT id, name, email, password_hash FROM users WHERE LOWER(email) = LOWER(?)",
+            (email,),
+        ).fetchone()
+        return row
+    finally:
+        conn.close()
+
+
 def create_user(name, email, password):
     conn = get_db()
     try:
