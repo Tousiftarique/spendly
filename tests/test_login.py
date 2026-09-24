@@ -10,7 +10,7 @@ def test_valid_login_sets_session_and_redirects(client):
         data={"email": "demo@spendly.com", "password": "demo123"},
     )
     assert response.status_code == 302
-    assert response.headers["Location"] == "/"
+    assert response.headers["Location"] == "/profile"
 
     with client.session_transaction() as session:
         assert session["user_id"] is not None
@@ -88,7 +88,7 @@ def test_logged_in_user_redirected_away_from_login(client):
 
     response = client.get("/login")
     assert response.status_code == 302
-    assert response.headers["Location"] == "/"
+    assert response.headers["Location"] == "/profile"
 
 
 def test_logged_in_user_redirected_away_from_register(client):
@@ -99,4 +99,4 @@ def test_logged_in_user_redirected_away_from_register(client):
 
     response = client.get("/register")
     assert response.status_code == 302
-    assert response.headers["Location"] == "/"
+    assert response.headers["Location"] == "/profile"
