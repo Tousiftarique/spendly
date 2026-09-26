@@ -6,54 +6,19 @@ from werkzeug.security import check_password_hash
 from database.db import (
     create_user,
     email_exists,
-    get_db,
     get_user_by_email,
     init_db,
     seed_db,
 )
+from database.queries import (
+    get_category_breakdown,
+    get_recent_transactions,
+    get_summary_stats,
+    get_user_by_id,
+)
 
 app = Flask(__name__)
 app.secret_key = "dev-only-secret-key"  # dev only — replace before any real deployment
-
-
-# ------------------------------------------------------------------ #
-# Hardcoded profile data (Step 4 — replaced with real queries in      #
-# Step 5)                                                             #
-# ------------------------------------------------------------------ #
-
-PROFILE_USER = {
-    "name": "Demo User",
-    "email": "demo@spendly.com",
-    "initials": "DU",
-    "member_since": "September 2026",
-}
-
-PROFILE_STATS = {
-    "total_spent": 393.49,
-    "transaction_count": 8,
-    "top_category": "Bills",
-}
-
-PROFILE_TRANSACTIONS = [
-    {"date": "Sep 22, 2026", "description": "Restaurant", "category": "Food", "amount": 30.25},
-    {"date": "Sep 18, 2026", "description": "Miscellaneous", "category": "Other", "amount": 12.00},
-    {"date": "Sep 14, 2026", "description": "New shoes", "category": "Shopping", "amount": 89.99},
-    {"date": "Sep 10, 2026", "description": "Movie ticket", "category": "Entertainment", "amount": 15.75},
-    {"date": "Sep 8, 2026", "description": "Pharmacy", "category": "Health", "amount": 60.00},
-    {"date": "Sep 5, 2026", "description": "Electricity bill", "category": "Bills", "amount": 120.00},
-    {"date": "Sep 3, 2026", "description": "Bus pass top-up", "category": "Transport", "amount": 20.00},
-    {"date": "Sep 1, 2026", "description": "Groceries", "category": "Food", "amount": 45.50},
-]
-
-PROFILE_CATEGORIES = [
-    {"name": "Bills", "total": 120.00, "percent": 30.5},
-    {"name": "Shopping", "total": 89.99, "percent": 22.9},
-    {"name": "Food", "total": 75.75, "percent": 19.3},
-    {"name": "Health", "total": 60.00, "percent": 15.3},
-    {"name": "Transport", "total": 20.00, "percent": 5.1},
-    {"name": "Entertainment", "total": 15.75, "percent": 4.0},
-    {"name": "Other", "total": 12.00, "percent": 3.0},
-]
 
 
 # ------------------------------------------------------------------ #
@@ -153,15 +118,33 @@ def logout():
 
 @app.route("/profile")
 def profile():
-    if not session.get("user_id"):
+    user_id = session.get("user_id")
+    if not user_id:
         return redirect(url_for("login"))
+
+    user = get_user_by_id(user_id)
+    if user is None:
+        session.clear()
+        return redirect(url_for("login"))
+
+    # --- Summary stats (section: summary-stats) ---
+    stats = get_summary_stats(user_id)
+    # --- end summary-stats ---
+
+    # --- Transaction history (section: transaction-history) ---
+    transactions = get_recent_transactions(user_id)
+    # --- end transaction-history ---
+
+    # --- Category breakdown (section: category-breakdown) ---
+    categories = get_category_breakdown(user_id)
+    # --- end category-breakdown ---
 
     return render_template(
         "profile.html",
-        user=PROFILE_USER,
-        stats=PROFILE_STATS,
-        transactions=PROFILE_TRANSACTIONS,
-        categories=PROFILE_CATEGORIES,
+        user=user,
+        stats=stats,
+        transactions=transactions,
+        categories=categories,
     )
 
 

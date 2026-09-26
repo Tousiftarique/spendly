@@ -74,9 +74,11 @@
                 <div class="profile-cat-row">
                     <span class="profile-cat-name">{{ cat.name }}</span>
                     <progress class="profile-progress profile-progress-{{ cat.name|lower }}"
-                              value="{{ cat.percent }}" max="100"></progress>
-                    <span class="profile-cat-amount">₹{{ "%.2f"|format(cat.total) }}</span>
+                              value="{{ cat.pct }}" max="100"></progress>
+                    <span class="profile-cat-amount">₹{{ "%.2f"|format(cat.amount) }}</span>
                 </div>
+                {% else %}
+                <p class="profile-empty">No spending to break down yet.</p>
                 {% endfor %}
             </div>
         </section>
