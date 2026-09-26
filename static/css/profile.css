@@ -237,3 +237,9 @@
     .profile-user-card { flex-direction: column; text-align: center; }
     .profile-cat-row { grid-template-columns: 70px 1fr 60px; }
 }
+
+/* Category breakdown empty state */
+.profile-empty {
+    color: var(--ink-muted);
+    font-size: 0.9rem;
+}
