@@ -1,4 +1,6 @@
+import calendar
 import sqlite3
+from datetime import date, datetime
 
 from flask import Flask, flash, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash
@@ -19,6 +21,57 @@ from database.queries import (
 
 app = Flask(__name__)
 app.secret_key = "dev-only-secret-key"  # dev only — replace before any real deployment
+
+
+# ------------------------------------------------------------------ #
+# Date filter helpers                                                 #
+# ------------------------------------------------------------------ #
+
+def _parse_iso_date(value):
+    if not value:
+        return None
+    try:
+        return datetime.strptime(value.strip(), "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def _months_ago(day, months):
+    total = day.year * 12 + (day.month - 1) - months
+    year, month = divmod(total, 12)
+    month += 1
+    last_day = calendar.monthrange(year, month)[1]
+    return date(year, month, min(day.day, last_day))
+
+
+def _date_presets(today):
+    today_iso = today.isoformat()
+    return {
+        "this_month": ("This Month", today.replace(day=1).isoformat(), today_iso),
+        "last_3": ("Last 3 Months", _months_ago(today, 3).isoformat(), today_iso),
+        "last_6": ("Last 6 Months", _months_ago(today, 6).isoformat(), today_iso),
+        "all": ("All Time", None, None),
+    }
+
+
+def _resolve_date_filter(raw_from, raw_to):
+    parsed_from = _parse_iso_date(raw_from)
+    parsed_to = _parse_iso_date(raw_to)
+    if parsed_from is None or parsed_to is None:
+        return None, None, None
+    if parsed_from > parsed_to:
+        return None, None, "Start date must be before end date."
+    return parsed_from.isoformat(), parsed_to.isoformat(), None
+
+
+def _resolve_active_preset(presets, date_from, date_to):
+    if date_from is None:
+        return "all"
+    return next(
+        (key for key, (_, p_from, p_to) in presets.items()
+         if (p_from, p_to) == (date_from, date_to)),
+        "custom",
+    )
 
 
 # ------------------------------------------------------------------ #
@@ -127,16 +180,31 @@ def profile():
         session.clear()
         return redirect(url_for("login"))
 
+    # --- Date filter (section: date-filter) ---
+    date_from, date_to, filter_error = _resolve_date_filter(
+        request.args.get("date_from"), request.args.get("date_to")
+    )
+    if filter_error:
+        flash(filter_error, "error")
+
+    presets = _date_presets(date.today())
+    active_preset = _resolve_active_preset(presets, date_from, date_to)
+    # --- end date-filter ---
+
     # --- Summary stats (section: summary-stats) ---
-    stats = get_summary_stats(user_id)
+    stats = get_summary_stats(user_id, date_from=date_from, date_to=date_to)
     # --- end summary-stats ---
 
     # --- Transaction history (section: transaction-history) ---
-    transactions = get_recent_transactions(user_id)
+    transactions = get_recent_transactions(
+        user_id, date_from=date_from, date_to=date_to
+    )
     # --- end transaction-history ---
 
     # --- Category breakdown (section: category-breakdown) ---
-    categories = get_category_breakdown(user_id)
+    categories = get_category_breakdown(
+        user_id, date_from=date_from, date_to=date_to
+    )
     # --- end category-breakdown ---
 
     return render_template(
@@ -145,6 +213,10 @@ def profile():
         stats=stats,
         transactions=transactions,
         categories=categories,
+        presets=presets,
+        active_preset=active_preset,
+        date_from=date_from,
+        date_to=date_to,
     )
 
 

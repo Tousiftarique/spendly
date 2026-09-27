@@ -4,7 +4,13 @@
       "Bash(python3 -m venv venv)",
       "PowerShell(python --version)",
       "PowerShell(py --version)",
-      "PowerShell(python -m venv venv)"
+      "PowerShell(python -m venv venv)",
+      "Bash(python -)",
+      "Bash(python -m pytest -q)",
+      "Bash(python -m pytest tests/test_profile_date_filter.py -v)",
+      "Bash(python -m pytest tests/test_06-profile-date-filter.py -v)",
+      "Bash(python -m pytest tests/test_06-profile-date-filter.py::TestCustomRangeHappyPath::test_valid_custom_range_excludes_transactions_outside_bounds -vv)",
+      "Bash(python -m pytest tests/test_06-profile-date-filter.py tests/test_profile_date_filter.py -q)"
     ]
   }
 }
