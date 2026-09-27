@@ -22,6 +22,36 @@
         </div>
     </section>
 
+    <section class="profile-filter" aria-label="Filter by date">
+        <nav class="profile-filter-presets">
+            {% for key, (label, p_from, p_to) in presets.items() %}
+            {% if p_from %}
+                {% set href = url_for('profile', date_from=p_from, date_to=p_to) %}
+            {% else %}
+                {% set href = url_for('profile') %}
+            {% endif %}
+            <a href="{{ href }}"
+               class="profile-filter-preset{% if active_preset == key %} is-active{% endif %}"
+               {% if active_preset == key %}aria-current="true"{% endif %}>{{ label }}</a>
+            {% endfor %}
+        </nav>
+
+        <form method="get" action="{{ url_for('profile') }}"
+              class="profile-filter-form{% if active_preset == 'custom' %} is-active{% endif %}">
+            <label class="profile-filter-field">
+                <span class="profile-filter-label">From</span>
+                <input type="date" name="date_from" class="form-input profile-filter-input"
+                       value="{{ date_from or '' }}">
+            </label>
+            <label class="profile-filter-field">
+                <span class="profile-filter-label">To</span>
+                <input type="date" name="date_to" class="form-input profile-filter-input"
+                       value="{{ date_to or '' }}">
+            </label>
+            <button type="submit" class="btn-primary profile-filter-apply">Apply</button>
+        </form>
+    </section>
+
     <section class="profile-stats">
         <div class="profile-stat-card">
             <div class="profile-stat-label">Total spent</div>
